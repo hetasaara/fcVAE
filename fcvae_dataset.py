@@ -19,7 +19,7 @@ import seaborn as sns
 import random
 import glob
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def load_data(filepath, test_size: float = 0.1, batch_size: int = 64):
     files = glob.glob(filepath + "*.txt")
