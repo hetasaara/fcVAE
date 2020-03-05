@@ -159,7 +159,8 @@ class fcTrainer:
         # Average loss terms over whole training set
         losses = np.array([total_loss, kls, recs, fool, disc])/self.N_train
         p = [item for sublist in mean_ps for item in sublist]
-        p = [np.mean(p[::self.n_tubes]), np.mean(p[1::self.n_tubes])]
+        #p = [np.mean(p[::self.n_tubes]), np.mean(p[1::self.n_tubes])]
+        p = [np.mean(p[i::self.n_tubes]) for i in range(self.n_tubes)]        
         self.TRAIN_HISTORY[self.epoch, :] = losses
         self.TRAIN_PROBS.append(p)
 
@@ -227,7 +228,8 @@ class fcTrainer:
         # Average loss terms over whole test set
         losses = np.array([total_loss, kls, recs, fool, disc])/self.N_test
         p = [item for sublist in mean_ps for item in sublist]
-        p = [np.mean(p[::self.n_tubes]), np.mean(p[1::self.n_tubes])]
+        #p = [np.mean(p[::self.n_tubes]), np.mean(p[1::self.n_tubes])]
+        p = [np.mean(p[i::self.n_tubes]) for i in range(self.n_tubes)]
         self.TEST_PROBS.append(p)
         self.TEST_HISTORY[self.epoch, :] = losses
 

@@ -189,31 +189,32 @@ def plot_imputed_values(trainer, latent2d, latents, datasets, titles, save_name=
 def plot_imputed_values_set(trainer, tube_id, latent2d, latents, datasets, titles, save_name=None):
     n_tubes = trainer.n_tubes
     imputed = []
+    tubes = []
     for i in range(n_tubes):
         if i != tube_id:
             imputed.append(get_imputed_values(trainer.vae, datasets[i][5], i))
+            tubes.append(i)
 
     cms1 = ["Greens", "Blues", "Reds", "Oranges"]
-    
-    # now true values are plotted in the middle
+
+    fig = plt.figure(figsize=(20,5))
+    fig.suptitle("True values for tube %s"%(tube_id+1), fontsize=16)
+    for k in range(1,5):
+        zs = latent2d[tube_id*latents[tube_id].shape[0] : (tube_id+1)*latents[tube_id].shape[0]]
+        plt.subplot(1,4,k)
+        t = datasets[tube_id][0].iloc[:,2+k]
+        plt.scatter(zs[:,0], zs[:, 1], c=t, s=1, cmap=cms1[k-1])
+        plt.title(titles[k-1]) 
+    latent2d = np.delete(latent2d, np.s_[tube_id*latents[tube_id].shape[0] : (tube_id+1)*latents[tube_id].shape[0]], 0)
     for i in range(len(imputed)):
         fig = plt.figure(figsize=(20,5))
-        zs = latent2d[tube_id*latents[tube_id].shape[0] : (tube_id+1)*latents[tube_id].shape[0]]
-        plt.subplot(1,4,1)
-        t = datasets[tube_id][0].iloc[:,tube_id+(n_tubes*4-1)]
-        plt.scatter(zs[:,0], zs[:, 1], c=t, s=1, cmap=cms1[tube_id-1])
-        plt.title(titles[tube_id-1])  
-        latent2d = np.delete(latent2d, np.s_[tube_id*latents[tube_id].shape[0] : (tube_id+1)*latents[tube_id].shape[0]], 0)
-        for j in range(2,5):
+        fig.suptitle("Imputed values for tube %s"%(tubes[i]+1), fontsize=16)
+        for j in range(1,5):
             zs = latent2d[i*latents[i].shape[0] : (i+1)*latents[i].shape[0]]
             plt.subplot(1,4,j)
-            t = imputed[i][:, j+(n_tubes*4-1)]
+            t = imputed[i][:, 2+tube_id*4+j]
             plt.scatter(zs[:,0], zs[:, 1], c=t, s=1, cmap=cms1[j-1])
-            plt.title(titles[j-1])  
-    
-
-
-# -
+            plt.title(titles[j-1])
 
 def create_colors_from_labels(labels):
     """
