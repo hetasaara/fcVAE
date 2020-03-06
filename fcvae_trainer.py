@@ -31,7 +31,8 @@ class fcTrainer:
             optimizer_kwargs,
             n_epochs: int = 100,
             print_frequency: int = 1,
-            dloss_weight = 50.0
+            dloss_weight = 50.0,
+            multiencoder: bool = False
     ):
 
         # Logging
@@ -51,6 +52,7 @@ class fcTrainer:
         self.N_train = N_train
         self.N_test = N_test
         self.dloss_weight = dloss_weight
+        self.multiencoder = multiencoder
 
         # Create optimizers
         self.vae_optimizer = torch.optim.Adam(self.vae.parameters(), **optimizer_kwargs)
@@ -104,7 +106,11 @@ class fcTrainer:
             if train_discriminator:
                 latent_samples = []
                 for head_id, x in enumerate(tensors):
-                    z_sample = self.vae.get_z(x.float().to(self.device), head_id)
+                    if self.multiencoder:
+                        #x = x.view(-1, input_dim_list[head_id]+input_dim_list[-1]) 
+                        z_sample = self.vae.get_z(x.float().to(self.device), head_id)
+                    else:
+                        z_sample = self.vae.get_z(x.float().to(self.device), head_id)
                     latent_samples.append(z_sample)
                     prediction = self.discriminator.classify(z_sample)
                     pred = prediction.detach().cpu().numpy()
