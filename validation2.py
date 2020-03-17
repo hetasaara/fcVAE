@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Fri Mar 13 13:17:43 2020
+
+@author: hiltunh3
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Fri Mar 13 09:56:09 2020
 
 @author: hiltunh3
@@ -8,7 +15,7 @@ Created on Fri Mar 13 09:56:09 2020
 import numpy as np
 import torch
 from fcvae_dataset import load_data
-from fcvae_model import VAE, Encoder, Decoder, Classifier
+from fcvae_model import multiVAE, multiEncoder, Decoder, Classifier
 from fcvae_trainer import fcTrainer
 
 import itertools
@@ -73,6 +80,7 @@ for i in params:
     lr = 1e-3              # learning rate
     n_head = 6
     n_shared = 3
+    n_unique = 4
     missing = 20
 
     datasets = load_data(filepath1)
@@ -90,14 +98,16 @@ for i in params:
         test_iterators.append(tube[4])
         train_cells += tube[1].nb_cells
         test_cells += tube[2].nb_cells
+
+    input_dim_list.append(n_shared)        
     
     N_train = int(train_cells/n_head)
     N_test = int(test_cells/n_head)
     print(i)
         
-    encoder = Encoder(n_head, input_dim_list, hidden_dim, latent_dim)
+    encoder = multiEncoder(n_head, n_shared, n_unique, hidden_dim, latent_dim)
     decoder = Decoder(latent_dim, d_hidden_dim, output_dim_list, n_head)
-    model = VAE(encoder, decoder).to(device)
+    model = multiVAE(encoder, decoder).to(device)
     discriminator = Classifier(latent_dim, hidden_dim, n_head) 
 
     trainer = fcTrainer(
@@ -137,6 +147,6 @@ print(val_losses)
 val_losses = torch.stack(val_losses).cpu().detach().numpy()
 
 df = pandas.DataFrame(data={"rec": val_losses, "acc": accuracies})
-df.to_csv("/scratch/cs/csb/projects/single-cell-analysis/FCM/AML_FCM/validation_metrics.csv", sep=',',index=False)
+df.to_csv("/scratch/cs/csb/projects/single-cell-analysis/FCM/AML_FCM/validation_metrics2.csv", sep=',',index=False)
 
 

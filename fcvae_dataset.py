@@ -18,10 +18,10 @@ import seaborn as sns
 import random
 import glob
 
-#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def load_data(filepath, test_size: float = 0.1, batch_size: int = 64, validation: bool = False):
-    files = glob.glob(filepath + "*.txt")
+    files = glob.glob(filepath + "train_" + "*.txt")
     all_datasets = []
     for i, file in enumerate(files): #order of markers, missing cloumns
         fc = pd.read_csv(file, delimiter = ',')
@@ -31,29 +31,17 @@ def load_data(filepath, test_size: float = 0.1, batch_size: int = 64, validation
         fc = (fc - mean) / std_dev
         fc_sub = fc.iloc[:,[0,1,4, 2,3,5,6]]
         
-        if validation:
-            remaining, test = train_test_split(fc_sub, test_size=test_size, random_state=42)            
-            ratio_remaining = 1 - test_size
-            ratio_val = test_size / ratio_remaining
-            train, validation = train_test_split(remaining, test_size=ratio_val)
-            
-            train_data = fcm_data(train)
-            test_data = fcm_data(test)
-            val_data = fcm_data(validation)
-            train_iterator = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-            test_iterator = DataLoader(test_data, batch_size=batch_size)
-            val_iterator = DataLoader(val_data, batch_size=batch_size)
-            all_datasets.append([fc_sub, train_data, val_data, train_iterator, val_iterator, test_iterator])   
+        ratio_remaining = 1 - test_size
+        ratio_val = test_size / ratio_remaining
 
-        else:
-            train, test = train_test_split(fc_sub, test_size=test_size) 
-            train_data = fcm_data(train)
-            test_data = fcm_data(test)
-            all_data = fcm_data(fc_sub)
-            train_iterator = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-            test_iterator = DataLoader(test_data, batch_size=batch_size)
-            whole_dataset = DataLoader(all_data, batch_size=batch_size)
-            all_datasets.append([fc_sub, train_data, test_data, train_iterator, test_iterator, whole_dataset])   
+        train, test = train_test_split(fc_sub, test_size=ratio_val) 
+        train_data = fcm_data(train)
+        test_data = fcm_data(test)
+        all_data = fcm_data(fc_sub)
+        train_iterator = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+        test_iterator = DataLoader(test_data, batch_size=batch_size)
+        whole_dataset = DataLoader(all_data, batch_size=batch_size)
+        all_datasets.append([fc_sub, train_data, test_data, train_iterator, test_iterator, whole_dataset])   
 
     return all_datasets
 

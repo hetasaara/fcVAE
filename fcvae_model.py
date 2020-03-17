@@ -225,7 +225,7 @@ class VAE(nn.Module): # needs n_labels as a parameter
         predicted = self.dec(x_sample, head_id)
         return predicted, z_mu, z_var
 
-## multiencoder
+# # multiencoder
 
 class multiEncoder(nn.Module):
     def __init__(self,
@@ -261,7 +261,7 @@ class multiEncoder(nn.Module):
         # z_var is of shape [batch_size, latent_dim]
 
         return z_mu, z_var
-        
+
 class multiVAE(nn.Module): 
     def __init__(self, enc, dec, z_dim=2, n_labels=8, n_shared=3, n_other=4):
         super().__init__()
