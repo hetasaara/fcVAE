@@ -4,6 +4,75 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 
 
+def draw_plot(save_name, **kwargs):
+    """Function to be used when a plot is to be shown or saved.
+    """
+    if save_name is None:
+        plt.show()
+    else:
+        save_path = os.path.join(get_output_dir(), save_name)
+        log_message('Saving figure to ' + save_path)
+        plt.savefig(save_path, **kwargs)
+        plt.close()
+
+
+def pair_plot(z, colors, panel_size=3.8, marker_size=10, alpha=0.7, save_name=None, **kwargs):
+    """Pair plot with all dimension pairs.
+
+    :param z: a numpy array with shape [n_cells, n_latent_dim]
+    :type z: numpy.ndarray
+    :param panel_size: size of one panel
+    :type panel_size: float
+    :param marker_size: marker size in the scatter plots
+    :type marker_size: int
+    :param alpha: marker alpha
+    :type alpha: float
+    :param colors: cell colors in a numpy array with length n_cells
+    :type colors: numpy.ndarray
+    :param save_name: filename for saving figure:
+    :type save_name: str
+    """
+    d = z.shape[1]
+    nplots = int(d*(d-1)/2)
+    nrows, ncols = determine_nrows_ncols(nplots)
+    figsize = (panel_size * ncols, panel_size * nrows)
+    fix, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
+    counter = 0
+    for i in range(0, d):
+        for j in range(i+1, d):
+            c = counter % ncols
+            r = int(np.floor(counter/ncols))
+            title = 'dim ' + str(i+1) + ' vs. dim ' + str(j+1)
+            if nrows > 1:
+                ax[r, c].scatter(z[:, i], z[:, j], c=colors, s=marker_size, alpha=alpha)
+                ax[r, c].set_title(title)
+            else:
+                ax[c].scatter(z[:, i], z[:, j], c=colors, s=marker_size, alpha=alpha)
+                ax[c].set_title(title)
+            counter += 1
+    draw_plot(save_name, **kwargs)
+
+
+def determine_nrows_ncols(nplots: int):
+    """Determine number of rows and columns a grid of subplots.
+
+    :param nplots: total number of subplots
+    :type nplots: int
+    """
+    if nplots < 2:
+        raise ValueError("nplots should be at least 2!")
+    if nplots < 4:
+        ncols = nplots
+    elif nplots < 5:
+        ncols = 2
+    elif nplots < 13:
+        ncols = 3
+    else:
+        ncols = 4
+    nrows = int(np.ceil(nplots / ncols))
+    return nrows, ncols
+
+
 def colors10(n_colors: int = 10):
     """
     Returns the n_colors first colors from the category10 colormap
