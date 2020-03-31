@@ -27,19 +27,29 @@ def validation_accuracy(model, discriminator, test_iterators):
         for head_id, batch in enumerate(tensors):
             z = model.get_z(batch.float(), head_id)
             p = discriminator.classify(z)
+            p = p.cpu().detach().numpy()
             ps.append(p)
-        pr = torch.cat(ps).cpu().detach().numpy()
-        probs.append(pr)
+        #pr = torch.cat(ps).cpu().detach().numpy()
+        #print(pr.shape)
+        probs.append(ps)
     return probs
 
-def validation_loss(test_iterators, model, input_dim_list):
+def validation_loss(test_iterators, model, discriminator, input_dim_list, weight):
     # set the evaluation mode
     model.eval()
+    discriminator.eval()
     n_head = len(input_dim_list)
     # test loss for the data
     test_losses = []
-    
+    d_losses = []
     for tensors in test_iterators:
+        latent_samples = []
+        for head_id, batch in enumerate(tensors):
+                z = model.get_z(batch.float(), head_id)
+                latent_samples.append(z)
+        d_loss = discriminator.loss([t.detach() for t in latent_samples], True)
+        d_loss *= weight
+        d_losses.append(d_loss)
         for head_id, x in enumerate(tensors): 
             # reshape the data
             x = x.view(-1, input_dim_list[head_id]) 
@@ -52,8 +62,9 @@ def validation_loss(test_iterators, model, input_dim_list):
             loss, recs, kls = model.loss(x_sample, x, z_mu, z_var, head_id)
             test_losses.append(loss)
     sum_loss = torch.stack(test_losses).sum()
-
-    return sum_loss
+    disc = torch.stack(d_losses).sum()
+    
+    return sum_loss, disc
 
 # optimal hyperparameters
 filepath1 = "/scratch/cs/csb/projects/single-cell-analysis/FCM/AML_FCM/data_files1/validation_sets/"
@@ -64,12 +75,14 @@ params = list(itertools.product(*params))
 print(params)
 accuracies = []
 val_losses = []
-for i in params:
+disc_losses = []
+train_probs = []
+for p in params:
     batch_size = 256         # number of data points in each batch
     n_epochs = 30           # times to run the model on complete data
     hidden_dim = 128        # hidden dimension
-    d_hidden_dim = i[2]
-    latent_dim = i[1]        # latent vector dimension
+    d_hidden_dim = p[2]
+    latent_dim = p[1]        # latent vector dimension
     lr = 1e-3              # learning rate
     n_head = 6
     n_shared = 3
@@ -93,7 +106,7 @@ for i in params:
     
     N_train = int(train_cells/n_head)
     N_test = int(test_cells/n_head)
-    print(i)
+    print(p)
         
     encoder = Encoder(n_head, input_dim_list, hidden_dim, latent_dim)
     decoder = Decoder(latent_dim, d_hidden_dim, output_dim_list, n_head)
@@ -107,7 +120,7 @@ for i in params:
             test_loaders = test_iterators,
             N_train = N_train,
             N_test = N_test,
-            dloss_weight = i[0],
+            dloss_weight = p[0],
             device = device,
             n_epochs = n_epochs,
             print_frequency = 1,
@@ -115,28 +128,37 @@ for i in params:
     )
 
     trainer.train()
+    prob1 = [item[0] for item in trainer.TRAIN_PROBS]
+    train_probs.append(prob1)
     acc = validation_accuracy(model, discriminator, zip(*test_iterators))
     acc = [item for sublist in acc for item in sublist]
-    acc = [item for sublist in acc for item in sublist]
+    acc = [(acc[i::n_head]) for i in range(n_head)]
     correct = 0
-    probs1 = acc[::n_head]
-    for i in probs1[:N_test]:
-        if i > 1/n_head:
-            correct += 1
-    for i in probs1[N_test:]:
-        if i < 1/n_head:
-            correct += 1
+    for i, a in enumerate(acc):
+        conc = [item for sublist in a for item in sublist]
+        conc = np.array(conc)
+        for r in range(len(conc)):
+            if conc[r,i] == max(conc[r,:]):
+                correct += 1
 
-    accuracy = correct/len(acc[::n_head])
+    accuracy = correct/(N_test*n_head)
     accuracies.append(accuracy)
-    val_loss = validation_loss(zip(*test_iterators), model, input_dim_list)/N_test
-    val_losses.append(val_loss)
+    val_loss, disc_loss = validation_loss(zip(*test_iterators), model, discriminator, input_dim_list, p[0])
+    val_losses.append(val_loss/N_test)
+    disc_losses.append(disc_loss/N_test)
 print(accuracies)
 print(val_losses)
+print(disc_losses)
 
 val_losses = torch.stack(val_losses).cpu().detach().numpy()
+disc_losses = torch.stack(disc_losses).cpu().detach().numpy()
 
-df = pandas.DataFrame(data={"rec": val_losses, "acc": accuracies})
-df.to_csv("/scratch/cs/csb/projects/single-cell-analysis/FCM/AML_FCM/validation_metrics.csv", sep=',',index=False)
+# +
+train_probs = pandas.DataFrame(train_probs)
+train_probs.to_csv("/scratch/cs/csb/projects/single-cell-analysis/FCM/AML_FCM/training_probs_grid_.csv", sep=',',index=False)
+
+df = pandas.DataFrame(data={"rec": val_losses, "acc": accuracies, "disc": disc_losses})
+df.to_csv("/scratch/cs/csb/projects/single-cell-analysis/FCM/AML_FCM/validation_metrics_true.csv", sep=',',index=False)
+# -
 
 

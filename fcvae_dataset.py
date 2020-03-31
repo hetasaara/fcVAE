@@ -21,7 +21,8 @@ import glob
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def load_data(filepath, test_size: float = 0.1, batch_size: int = 64, validation: bool = False):
-    files = glob.glob(filepath + "train_" + "*.txt")
+    #files = glob.glob(filepath + "train_" + "*.txt")
+    files = glob.glob(filepath + "*.txt")
     all_datasets = []
     for i, file in enumerate(files): #order of markers, missing cloumns
         fc = pd.read_csv(file, delimiter = ',')
@@ -31,10 +32,11 @@ def load_data(filepath, test_size: float = 0.1, batch_size: int = 64, validation
         fc = (fc - mean) / std_dev
         fc_sub = fc.iloc[:,[0,1,4, 2,3,5,6]]
         
-        ratio_remaining = 1 - test_size
-        ratio_val = test_size / ratio_remaining
+        #ratio_remaining = 1 - test_size
+        #ratio_val = test_size / ratio_remaining
 
-        train, test = train_test_split(fc_sub, test_size=ratio_val) 
+        #train, test = train_test_split(fc_sub, test_size=ratio_val)
+        train, test = train_test_split(fc_sub, test_size=test_size) 
         train_data = fcm_data(train)
         test_data = fcm_data(test)
         all_data = fcm_data(fc_sub)

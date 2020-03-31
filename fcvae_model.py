@@ -253,8 +253,6 @@ class multiEncoder(nn.Module):
         # x is of shape [batch_size, input_dim]
         hidden = F.relu(self.layer1(x_shared, x_unique, head_id))
         hidden = F.relu(self.layer2(hidden))
-        #hidden = self.shared_layer(hidden)
-        #how this works, can just concat these?
         z_mu = self.mu(hidden)
         # z_mu is of shape [batch_size, latent_dim]
         z_var = self.var(hidden)
