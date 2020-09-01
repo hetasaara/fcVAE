@@ -121,7 +121,7 @@ def plot_trainer_history(trainer, i_start: int = 0, save_name=None):
     """
 
     fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(17, 8))
-    titles = ["Vae loss", "KL", "Reconstruction", "Fooling", "Discriminator"]
+    titles = ["Vae loss", "KL divergence", "Reconstruction loss", "Fooling loss", "Discriminator loss"]
 
     for k in range(0, 3):
         r = k
@@ -165,6 +165,8 @@ def plot_probabilities(trainer, i_start: int = 0, save_name=None):
         prob1 = [item[i] for item in trainer.TRAIN_PROBS]      
         x = np.linspace(0, trainer.n_epochs, trainer.n_epochs)
         plt.plot(x, prob1)
+        plt.xlabel('Epoch')
+        plt.ylabel('Probability')
         labels.append(i+1)
     plt.title("Training probabilities")
     plt.legend(labels)
@@ -195,7 +197,7 @@ def plot_joint_aml(trainer, latent2d, latents, save_name=None):
         plt.close
 
 def plot_shared_markers_aml(trainer, latent2d, latents, datasets, save_name=None):           
-    titles = ["FCS", "SSC", "CD45"]
+    titles = ["FSC", "SSC", "CD45"]
     for i in range(trainer.n_tubes):
         fig = plt.figure(figsize=(20,5))
         for j in range(1,4):
@@ -204,13 +206,13 @@ def plot_shared_markers_aml(trainer, latent2d, latents, datasets, save_name=None
             t = datasets[i][0].iloc[:,j-1]
             plt.scatter(zs[:,0], zs[:, 1], c=t, s=1)
             plt.title(titles[j-1])
-    if save_name is None:
-        plt.show()
-    else:
-        print('Saving figure as ' + save_name)
-        plt.savefig(save_name)
-        plt.show()
-        plt.close
+        if save_name is None:
+            plt.show()
+        else:
+            print('Saving figure as ' + save_name[i])
+            plt.savefig(save_name[i])
+            plt.show()
+            plt.close
 
 def get_imputed_values(model, all_data, head_id):
     imputed_values = []
@@ -251,7 +253,7 @@ def plot_imputed_values(trainer, latent2d, latents, datasets, titles, save_name=
             else:
                 t = imputed1[:, j+6]
             plt.scatter(zs[:,0], zs[:, 1], c=t, s=1, cmap=cms2[j-1])
-            plt.title(titles[i][j-1])  
+            plt.title(titles[i][j-1]) 
  
 
 # new plotting function, plot only one set (4) of markers for all imputed + the one having actual measurements
@@ -274,6 +276,13 @@ def plot_imputed_values_set(trainer, tube_id, latent2d, latents, datasets, title
         t = datasets[tube_id][0].iloc[:,2+k]
         plt.scatter(zs[:,0], zs[:, 1], c=t, s=1, cmap=cms1[k-1])
         plt.title(titles[k-1]) 
+    if save_name is None:
+        plt.show()
+    else:
+        print('Saving figure as ' + save_name[0])
+        plt.savefig(save_name[0])
+        plt.show()
+        plt.close
     latent2d = np.delete(latent2d, np.s_[tube_id*latents[tube_id].shape[0] : (tube_id+1)*latents[tube_id].shape[0]], 0)
     for i in range(len(imputed)):
         fig = plt.figure(figsize=(20,5))
@@ -284,6 +293,13 @@ def plot_imputed_values_set(trainer, tube_id, latent2d, latents, datasets, title
             t = imputed[i][:, 2+tube_id*4+j]
             plt.scatter(zs[:,0], zs[:, 1], c=t, s=1, cmap=cms1[j-1])
             plt.title(titles[j-1])
+        if save_name is None:
+            plt.show()
+        else:
+            print('Saving figure as ' + save_name[i+1])
+            plt.savefig(save_name[i+1])
+            plt.show()
+            plt.close
 
 def create_colors_from_labels(labels):
     """
